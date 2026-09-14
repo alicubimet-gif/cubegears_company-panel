@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { CompanyProvider } from './context/CompanyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PayrollPeriodProvider } from './context/PayrollPeriodContext';
+import './api/registerSaasEndpoints';
 import { AppRoutes } from './routes/AppRoutes';
 import './routes/saasRouteRegistration';
 import './index.css';

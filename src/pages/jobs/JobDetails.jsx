@@ -29,7 +29,8 @@ import {
   Link,
   PlusCircle,
   Trash2,
-  UserCheck
+  UserCheck,
+  Package
 } from 'lucide-react';
 
 export const JobDetails = () => {

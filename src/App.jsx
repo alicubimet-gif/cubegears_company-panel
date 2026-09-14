@@ -11,6 +11,7 @@ import './styles/component-system.css';
 import './styles/responsive.css';
 import './styles/crud-system.css';
 import './styles/settings-system.css';
+import './styles/saas-account.css';
 
 export function App() {
   return (

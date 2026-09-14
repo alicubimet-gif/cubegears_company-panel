@@ -5,6 +5,7 @@ import { CompanyProvider } from './context/CompanyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PayrollPeriodProvider } from './context/PayrollPeriodContext';
 import { AppRoutes } from './routes/AppRoutes';
+import './routes/saasRouteRegistration';
 import './index.css';
 import './styles/globals.css';
 import './styles/component-system.css';

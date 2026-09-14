@@ -9,6 +9,7 @@ import './index.css';
 import './styles/globals.css';
 import './styles/component-system.css';
 import './styles/responsive.css';
+import './styles/crud-system.css';
 
 export function App() {
   return (

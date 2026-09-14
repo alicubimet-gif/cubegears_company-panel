@@ -28,6 +28,7 @@ import { Reports } from '../pages/reports/Reports';
 import { Notifications } from '../pages/notifications/Notifications';
 import { Settings } from '../pages/settings/Settings';
 import { SaaSAccount } from '../pages/saas/SaaSAccount';
+import { StorageDayDetails } from '../pages/saas/StorageDayDetails';
 
 export const AppRoutes = () => (
   <Routes>
@@ -104,6 +105,7 @@ export const AppRoutes = () => (
       <Route path="/account" element={<Navigate to="/account/billing" replace />} />
       <Route path="/account/billing" element={<SaaSAccount section="billing" />} />
       <Route path="/account/storage" element={<SaaSAccount section="storage" />} />
+      <Route path="/account/storage/history/:date" element={<StorageDayDetails />} />
     </Route>
 
     <Route path="*" element={<Navigate to="/dashboard" replace />} />

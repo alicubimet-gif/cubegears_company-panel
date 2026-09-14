@@ -1,1 +1,1 @@
-export { Pagination } from '../data-display/Pagination';
+export { Pagination } from '../navigation/Pagination';

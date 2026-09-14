@@ -5,7 +5,9 @@ import { CompanyProvider } from './context/CompanyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PayrollPeriodProvider } from './context/PayrollPeriodContext';
 import { AppRoutes } from './routes/AppRoutes';
+import './index.css';
 import './styles/globals.css';
+import './styles/component-system.css';
 import './styles/responsive.css';
 
 export function App() {

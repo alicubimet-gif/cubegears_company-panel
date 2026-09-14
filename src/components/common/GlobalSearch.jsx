@@ -145,7 +145,8 @@ export const GlobalSearch = ({ isMobileView = false, onMobileClose = null }) => 
     setQuery('');
     setResults([]);
     if (isMobileView && onMobileClose) onMobileClose();
-    if (item.path) navigate(item.path);
+    const destination = item.path || item.route;
+    if (destination) navigate(destination);
   };
 
   const getModuleIcon = (group) => {

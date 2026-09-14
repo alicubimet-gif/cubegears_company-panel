@@ -39,6 +39,7 @@ import { Reports } from '../pages/reports/Reports';
 import { Website } from '../pages/website/Website';
 import { Notifications } from '../pages/notifications/Notifications';
 import { Settings } from '../pages/settings/Settings';
+import { ComponentsPage } from '../pages/components/ComponentsPage';
 
 export const AppRoutes = () => {
   return (
@@ -130,6 +131,7 @@ export const AppRoutes = () => {
         <Route path="/website" element={<Website />} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/components" element={<ComponentsPage />} />
       </Route>
 
       {/* Fallback Catch-all */}

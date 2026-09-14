@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import { HardDrive, Upload, Trash2, ReceiptText, Users, CalendarDays, ShieldCheck, Infinity, IndianRupee, History } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { CalendarDays, ChevronRight, HardDrive, History, IndianRupee, Infinity, ReceiptText, ShieldCheck, Trash2, Upload, Users } from 'lucide-react';
 import { saasAccountService } from '../../services/saasAccount.service';
+import { storageHistoryService } from '../../services/storageHistory.service';
 import { STORAGE_PRICE_PER_GB_DAY, storageDayCharge } from '../../services/storagePricing';
 
 const money = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 2 });
 const date = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
 const dateTime = new Intl.DateTimeFormat('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const iso = (value) => new Date(value).toISOString().slice(0, 10);
 
 function BillingView({ billing, storage, onSeatsChange }) {
   const estimate = useMemo(() => saasAccountService.calculateMonthlyEstimate(billing), [billing]);
@@ -24,7 +27,7 @@ function BillingView({ billing, storage, onSeatsChange }) {
       </section>
 
       <section className="saas-card">
-        <div className="saas-card-head"><div><span className="saas-kicker">MONTHLY ESTIMATE</span><h2>{money.format(estimate.total + todayStorage)}</h2></div><ReceiptText size={22} /></div>
+        <div className="saas-card-head"><div><span className="saas-kicker">CURRENT ESTIMATE</span><h2>{money.format(estimate.total + todayStorage)}</h2></div><ReceiptText size={22} /></div>
         <div className="saas-breakdown">
           <div><span>Plan</span><strong>{money.format(estimate.base)}</strong></div>
           <div><span>Storage today ({storage.usedGb} GB × ₹{STORAGE_PRICE_PER_GB_DAY})</span><strong>{money.format(todayStorage)}</strong></div>
@@ -50,17 +53,41 @@ function BillingView({ billing, storage, onSeatsChange }) {
 }
 
 function StorageView({ storage, setStorage }) {
+  const navigate = useNavigate();
   const [selected, setSelected] = useState([]);
   const [category, setCategory] = useState('Job Card');
+  const [history, setHistory] = useState([]);
   const [audit, setAudit] = useState(() => {
     try { return JSON.parse(localStorage.getItem('cubixgear-storage-audit') || '[]'); } catch { return []; }
   });
+  const [rangePreset, setRangePreset] = useState('7');
+  const [to, setTo] = useState(iso(new Date()));
+  const [from, setFrom] = useState(iso(new Date(Date.now() - 6 * 86400000)));
   const todayCharge = storageDayCharge(storage.usedGb);
+
+  const summary = useMemo(() => storageHistoryService.summarizeStorageHistory(history), [history]);
+
+  const refreshHistory = async (nextFrom = from, nextTo = to) => setHistory(await storageHistoryService.getStorageHistory({ from: nextFrom, to: nextTo }));
+
+  useEffect(() => { refreshHistory(); }, []);
 
   const log = (action, details) => {
     const next = [{ id: Date.now(), at: new Date().toISOString(), action, details, user: 'Current User' }, ...audit].slice(0, 100);
     setAudit(next);
     localStorage.setItem('cubixgear-storage-audit', JSON.stringify(next));
+  };
+
+  const choosePreset = (value) => {
+    setRangePreset(value);
+    const end = new Date();
+    let start;
+    if (value === 'month') start = new Date(end.getFullYear(), end.getMonth(), 1);
+    else start = new Date(end.getTime() - (Number(value) - 1) * 86400000);
+    const nextFrom = iso(start);
+    const nextTo = iso(end);
+    setFrom(nextFrom);
+    setTo(nextTo);
+    refreshHistory(nextFrom, nextTo);
   };
 
   const upload = async (event) => {
@@ -69,6 +96,8 @@ function StorageView({ storage, setStorage }) {
     if (!valid.length) return;
     const next = await saasAccountService.uploadMediaFiles(valid, category);
     setStorage(next);
+    await storageHistoryService.recordTodayStorageSnapshot(next);
+    await refreshHistory();
     log('UPLOAD', `${valid.length} photo(s) uploaded to ${category}`);
     event.target.value = '';
   };
@@ -77,6 +106,8 @@ function StorageView({ storage, setStorage }) {
     if (!ids.length || !window.confirm(`Delete ${ids.length} photo(s)? This cannot be undone.`)) return;
     const next = await saasAccountService.deleteMediaFiles(ids);
     setStorage(next);
+    await storageHistoryService.recordTodayStorageSnapshot(next);
+    await refreshHistory();
     log('DELETE', `${ids.length} photo(s) deleted`);
     setSelected((old) => old.filter((id) => !ids.includes(id)));
   };
@@ -86,12 +117,6 @@ function StorageView({ storage, setStorage }) {
     setStorage(next);
     log('SETTINGS', `${key} changed to ${String(value)}`);
   };
-
-  const usageRows = [
-    { label: 'Today', gb: Number(storage.usedGb || 0), charge: todayCharge },
-    { label: 'Yesterday', gb: Number(storage.usedGb || 0), charge: todayCharge },
-    { label: 'Previous day', gb: Number(storage.usedGb || 0), charge: todayCharge }
-  ];
 
   return (
     <div className="saas-grid">
@@ -107,13 +132,41 @@ function StorageView({ storage, setStorage }) {
           <label className="saas-button"><Upload size={18} /> Upload photos<input hidden multiple type="file" accept="image/jpeg,image/png,image/webp" onChange={upload} /></label>
           <button className="saas-button danger" disabled={!selected.length} onClick={() => remove(selected)}><Trash2 size={18} /> Delete selected</button>
         </div>
-        <p className="saas-muted">No storage cap. Billing is calculated daily from actual stored GB. Accepted JPG, PNG and WebP; maximum {storage.settings.maxFileMb} MB per file.</p>
+        <p className="saas-muted">No storage cap. Billing is calculated from each day’s recorded storage snapshot.</p>
       </section>
 
-      <section className="saas-card">
-        <div className="saas-card-head"><div><span className="saas-kicker">DAILY USAGE</span><h2>Storage billing log</h2></div><IndianRupee size={22} /></div>
-        <div className="saas-breakdown">{usageRows.map((row) => <div key={row.label}><span>{row.label} · {row.gb} GB</span><strong>{money.format(row.charge)}</strong></div>)}</div>
-        <p className="saas-muted">Backend should store one immutable usage snapshot per day for final billing.</p>
+      <section className="saas-card saas-wide storage-history-card">
+        <div className="saas-card-head"><div><span className="saas-kicker">USAGE INTERVAL</span><h2>Storage billing history</h2></div><IndianRupee size={22} /></div>
+        <div className="storage-range-toolbar">
+          <div className="storage-range-presets">
+            <button className={rangePreset === '7' ? 'active' : ''} onClick={() => choosePreset('7')}>Last 7 days</button>
+            <button className={rangePreset === '30' ? 'active' : ''} onClick={() => choosePreset('30')}>Last 30 days</button>
+            <button className={rangePreset === 'month' ? 'active' : ''} onClick={() => choosePreset('month')}>This month</button>
+          </div>
+          <div className="storage-custom-range">
+            <label><span>From</span><input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setRangePreset('custom'); }} /></label>
+            <label><span>To</span><input type="date" value={to} onChange={(e) => { setTo(e.target.value); setRangePreset('custom'); }} /></label>
+            <button onClick={() => refreshHistory()}>Apply</button>
+          </div>
+        </div>
+
+        <div className="storage-interval-summary">
+          <div><span>Days</span><strong>{summary.days}</strong></div>
+          <div><span>Average storage</span><strong>{summary.averageGb.toFixed(2)} GB</strong></div>
+          <div><span>Peak storage</span><strong>{summary.peakGb.toFixed(2)} GB</strong></div>
+          <div><span>Interval charge</span><strong>{money.format(summary.totalCharge)}</strong></div>
+        </div>
+
+        <div className="storage-history-list">
+          {history.map((row) => (
+            <button key={row.date} className="storage-history-row" onClick={() => navigate(`/account/storage/history/${row.date}`)}>
+              <div><strong>{date.format(new Date(`${row.date}T00:00:00`))}</strong><span>{row.fileCount} files</span></div>
+              <div><span>Stored</span><strong>{row.usedGb} GB</strong></div>
+              <div><span>Charge</span><strong>{money.format(row.charge)}</strong></div>
+              <ChevronRight size={18} />
+            </button>
+          ))}
+        </div>
       </section>
 
       <section className="saas-card">
@@ -128,7 +181,7 @@ function StorageView({ storage, setStorage }) {
       </section>
 
       <section className="saas-card saas-wide">
-        <div className="saas-card-head"><div><span className="saas-kicker">FILES</span><h2>Uploaded photos</h2></div><span>{storage.files.length} files</span></div>
+        <div className="saas-card-head"><div><span className="saas-kicker">FILES</span><h2>Current uploaded photos</h2></div><span>{storage.files.length} files</span></div>
         <div className="saas-media-list">{storage.files.map((file) => <article className="saas-media-row" key={file.id}><input type="checkbox" checked={selected.includes(file.id)} onChange={(e) => setSelected((old) => e.target.checked ? [...old, file.id] : old.filter((id) => id !== file.id))} /><div className="saas-file-icon">IMG</div><div className="saas-file-main"><strong>{file.name}</strong><span>{file.category} · {file.sizeMb} MB · {file.uploadedBy}</span></div><span className="saas-file-date">{date.format(new Date(file.uploadedAt))}</span><button className="saas-icon-button" aria-label={`Delete ${file.name}`} onClick={() => remove([file.id])}><Trash2 size={17} /></button></article>)}</div>
       </section>
 
@@ -147,7 +200,7 @@ export function SaaSAccount({ section = 'billing' }) {
 
   useEffect(() => {
     Promise.all([saasAccountService.getSubscriptionBilling(), saasAccountService.getStorageAccount()])
-      .then(([billingData, storageData]) => { setBilling(billingData); setStorage(storageData); })
+      .then(([billingData, storageData]) => { setBilling(billingData); setStorage(storageData); storageHistoryService.recordTodayStorageSnapshot(storageData); })
       .catch(() => setError('Could not load SaaS account data.'));
   }, []);
 
@@ -157,5 +210,5 @@ export function SaaSAccount({ section = 'billing' }) {
 
   billing.usage.storageUsedGb = storage.usedGb;
 
-  return <div className="saas-page"><header className="saas-page-head"><div><span className="saas-kicker">CUBIXGEAR SaaS</span><h1>{section === 'storage' ? 'Media Storage' : 'Billing & Plan'}</h1><p>{section === 'storage' ? 'Unlimited photo storage billed daily at ₹2 per GB, with upload controls and audit history.' : 'Track software billing, users, storage usage and subscription history.'}</p></div></header>{section === 'storage' ? <StorageView storage={storage} setStorage={setStorage} /> : <BillingView billing={billing} storage={storage} onSeatsChange={seats} />}</div>;
+  return <div className="saas-page"><header className="saas-page-head"><div><span className="saas-kicker">CUBIXGEAR SaaS</span><h1>{section === 'storage' ? 'Media Storage' : 'Billing & Plan'}</h1><p>{section === 'storage' ? 'Unlimited photo storage billed at ₹2 per GB per day with interval history and daily file snapshots.' : 'Track software billing, users, storage usage and subscription history.'}</p></div></header>{section === 'storage' ? <StorageView storage={storage} setStorage={setStorage} /> : <BillingView billing={billing} storage={storage} onSeatsChange={seats} />}</div>;
 }

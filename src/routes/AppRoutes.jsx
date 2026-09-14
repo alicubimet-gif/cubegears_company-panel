@@ -35,6 +35,7 @@ export const AppRoutes = () => (
     <Route path="/reset-password" element={<ResetPassword />} />
 
     <Route element={<ProtectedRoute />}>
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
 
       <Route path="/my-attendance" element={<MyAttendance />} />

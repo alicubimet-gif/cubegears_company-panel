@@ -16,7 +16,8 @@ import {
   BarChart3,
   Globe,
   Bell,
-  Settings
+  Settings,
+  Blocks
 } from 'lucide-react';
 
 export const ROUTE_SECTIONS = {
@@ -231,6 +232,15 @@ export const routeConfig = [
     label: 'Settings',
     path: '/settings',
     icon: Settings,
+    section: ROUTE_SECTIONS.ANALYTICS_SYSTEM,
+    mobilePrimary: false,
+    permission: 'settings.manage'
+  },
+  {
+    id: 'components',
+    label: 'Component Library',
+    path: '/components',
+    icon: Blocks,
     section: ROUTE_SECTIONS.ANALYTICS_SYSTEM,
     mobilePrimary: false,
     permission: 'settings.manage'

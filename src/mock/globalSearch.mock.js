@@ -163,9 +163,9 @@ export const searchMockData = (query) => {
         type: 'Stock Item',
         group: 'Stock Items',
         title: s.partName,
-        subtitle: `SKU: ${s.sku} • Stock: ${s.currentStock} units • Price: ${formatCurrency(s.sellingPrice)}`,
-        status: s.stockStatus,
-        route: `/inventory/items/${s.id}`
+        subtitle: `SKU: ${s.sku} • Stock: ${s.onHand} ${s.unit} • Price: ${formatCurrency(s.sellingPrice)}`,
+        status: s.onHand <= 0 ? 'Out of Stock' : s.onHand <= s.minimumStock ? 'Low Stock' : 'In Stock',
+        route: `/stock/items/${s.id}`
       });
     }
   });

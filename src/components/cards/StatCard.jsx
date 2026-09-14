@@ -1,12 +1,12 @@
 import React from 'react';
 import * as Icons from 'lucide-react';
 
-export const StatCard = ({ title, value, change, icon = 'TrendingUp', trend = 'up', isFullWidth = false }) => {
+export const StatCard = ({ title, value, change, context, icon = 'TrendingUp', trend = 'up', isFullWidth = false, className = '' }) => {
   const IconComponent = Icons[icon] || Icons.TrendingUp;
 
   return (
     <div
-      className={`summary-card ${isFullWidth ? 'outstanding-card' : ''}`}
+      className={`ui-card ui-stat-card summary-card ${isFullWidth ? 'outstanding-card' : ''} ${className}`.trim()}
       style={{
         backgroundColor: 'var(--surface)',
         border: '1px solid var(--border)',
@@ -66,6 +66,7 @@ export const StatCard = ({ title, value, change, icon = 'TrendingUp', trend = 'u
           <IconComponent size={20} />
         </div>
       </div>
+      {(change || context) && <span className="ui-stat-card__context" style={{ color: trend === 'down' ? 'var(--danger)' : undefined }}>{change || context}</span>}
     </div>
   );
 };

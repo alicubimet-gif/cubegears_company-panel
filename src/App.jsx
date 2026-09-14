@@ -4,13 +4,17 @@ import { AuthProvider } from './context/AuthContext';
 import { CompanyProvider } from './context/CompanyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PayrollPeriodProvider } from './context/PayrollPeriodContext';
+import './api/registerSaasEndpoints';
 import { AppRoutes } from './routes/AppRoutes';
+import './routes/saasRouteRegistration';
 import './index.css';
 import './styles/globals.css';
 import './styles/component-system.css';
 import './styles/responsive.css';
 import './styles/crud-system.css';
 import './styles/settings-system.css';
+import './styles/saas-account.css';
+import './styles/ui-refinements.css';
 
 export function App() {
   return (

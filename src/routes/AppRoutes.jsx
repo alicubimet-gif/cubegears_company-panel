@@ -27,6 +27,9 @@ import { ExpenseList } from '../pages/expenses/ExpenseList';
 import { Reports } from '../pages/reports/Reports';
 import { Notifications } from '../pages/notifications/Notifications';
 import { Settings } from '../pages/settings/Settings';
+import { SaaSAccount } from '../pages/saas/SaaSAccount';
+import { StorageHistory } from '../pages/saas/StorageHistory';
+import { StorageDayDetails } from '../pages/saas/StorageDayDetails';
 
 export const AppRoutes = () => (
   <Routes>
@@ -37,7 +40,6 @@ export const AppRoutes = () => (
     <Route element={<ProtectedRoute />}>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
-
       <Route path="/my-attendance" element={<MyAttendance />} />
       <Route path="/my-attendance/calendar" element={<MyAttendance />} />
       <Route path="/my-attendance/history" element={<MyAttendance />} />
@@ -63,16 +65,13 @@ export const AppRoutes = () => (
       <Route path="/payroll/advances" element={<Payroll section="advances" />} />
       <Route path="/payroll/payslips" element={<Payroll section="payslips" />} />
       <Route path="/payroll/reports" element={<Payroll section="reports" />} />
-
       <Route path="/customers" element={<CustomerList />} />
       <Route path="/customers/add" element={<AddCustomer />} />
       <Route path="/customers/edit/:id" element={<EditCustomer />} />
       <Route path="/customers/:id" element={<CustomerDetails />} />
-
       <Route path="/vehicles" element={<VehicleList />} />
       <Route path="/vehicles/add" element={<VehicleList />} />
       <Route path="/vehicles/:id" element={<VehicleList />} />
-
       <Route path="/services" element={<ServiceList />} />
       <Route path="/services/new" element={<ServiceList />} />
       <Route path="/jobs" element={<JobList />} />
@@ -81,7 +80,6 @@ export const AppRoutes = () => (
       <Route path="/jobs/:id" element={<JobDetails />} />
       <Route path="/jobs/:id/*" element={<JobDetails />} />
       <Route path="/jobs/:id/status" element={<JobStatus />} />
-
       <Route path="/inventory" element={<InventoryList />} />
       <Route path="/inventory/:id" element={<InventoryList />} />
       <Route path="/stock" element={<StockManagement />} />
@@ -99,7 +97,6 @@ export const AppRoutes = () => (
       <Route path="/stock/purchases" element={<StockManagement />} />
       <Route path="/stock/count" element={<StockManagement />} />
       <Route path="/stock/reports" element={<StockManagement />} />
-
       <Route path="/invoices" element={<InvoiceList />} />
       <Route path="/invoices/create" element={<InvoiceList />} />
       <Route path="/payments" element={<PaymentList />} />
@@ -107,6 +104,11 @@ export const AppRoutes = () => (
       <Route path="/reports" element={<Reports />} />
       <Route path="/notifications" element={<Notifications />} />
       <Route path="/settings" element={<Settings />} />
+      <Route path="/account" element={<Navigate to="/account/billing" replace />} />
+      <Route path="/account/billing" element={<SaaSAccount section="billing" />} />
+      <Route path="/account/storage" element={<SaaSAccount section="storage" />} />
+      <Route path="/account/storage/history" element={<StorageHistory />} />
+      <Route path="/account/storage/history/:date" element={<StorageDayDetails />} />
     </Route>
 
     <Route path="*" element={<Navigate to="/dashboard" replace />} />

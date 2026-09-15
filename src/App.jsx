@@ -20,6 +20,7 @@ import './styles/billing-system.css';
 import './styles/job-card-simple.css';
 import './styles/simple-workflow.css';
 import './styles/simple-jobs.css';
+import './styles/dashboard-polish.css';
 
 export function App() {
   return (

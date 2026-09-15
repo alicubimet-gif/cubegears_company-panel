@@ -33,12 +33,14 @@ import { StorageDayDetails } from '../pages/saas/StorageDayDetails';
 
 export const AppRoutes = () => (
   <Routes>
+    {/* Canonical app entry: never keep dashboard filters on the bare root URL. */}
+    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+
     <Route path="/login" element={<Login />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
 
     <Route element={<ProtectedRoute />}>
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/my-attendance" element={<MyAttendance />} />
       <Route path="/my-attendance/calendar" element={<MyAttendance />} />

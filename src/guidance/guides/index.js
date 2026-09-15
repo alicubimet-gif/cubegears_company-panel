@@ -46,7 +46,7 @@ export const guides = {
   ]),
   customerDetail: guide('customer-detail', 'Customer profile guide', '/customers/:id', 'This page is the customer’s workshop profile.', [
     step('Customer identity', 'Confirm phone, contact and billing details before creating new work.'),
-    step('Connected vehicles', 'Use the customer profile as the reference for their registered vehicles and workshop history.'),
+    step('Connected vehicles', 'Use the customer profile as the reference for registered vehicles and workshop history.'),
     step('Edit customer', 'Use Edit when contact, company or GST information changes.'),
     step('Start new work', 'Create a Job Card when the customer brings a vehicle for service.', null, '/jobs/new')
   ]),
@@ -215,7 +215,7 @@ export const guides = {
 
   profile: guide('profile', 'Profile guide', '/profile', 'Your profile shows the signed-in user identity and role.', [
     step('Identity', 'Confirm your name, role and account details.'),
-    step('Role controls visibility', 'The system should show only the modules/actions relevant to your permissions.'),
+    step('Role controls visibility', 'The system should show only modules/actions relevant to your permissions.'),
     step('Settings', 'Open Settings for company/application preferences.', null, '/settings')
   ]),
 

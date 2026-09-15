@@ -47,7 +47,8 @@ export function GuidanceProvider({ children }) {
     if (!guide) return;
     setLauncherEl(opener || document.activeElement);
     setActiveGuide(guide);
-    setStepIndex(Math.min(Math.max(startAt, 0), Math.max(guide.steps.length - 1, 0)));
+    const safeIndex = Math.min(Math.max(Number(startAt || 0), 0), Math.max(guide.steps.length - 1, 0));
+    setStepIndex(safeIndex);
     setState((prev) => ({
       ...prev,
       guides: {
@@ -55,7 +56,7 @@ export function GuidanceProvider({ children }) {
         [guide.id]: {
           guideVersion: guide.version,
           status: 'active',
-          lastStep: startAt,
+          lastStep: safeIndex,
           completedAt: null
         }
       }
@@ -84,8 +85,7 @@ export function GuidanceProvider({ children }) {
 
   const next = useCallback(() => {
     if (!activeGuide) return;
-    const last = stepIndex >= activeGuide.steps.length - 1;
-    if (last) {
+    if (stepIndex >= activeGuide.steps.length - 1) {
       closeGuide('completed');
       return;
     }
@@ -134,6 +134,15 @@ export function GuidanceProvider({ children }) {
   const resetDismissedTips = useCallback(() => setState((prev) => ({ ...prev, dismissedTips: [] })), []);
   const setShowTips = useCallback((value) => setState((prev) => ({ ...prev, showTips: Boolean(value) })), []);
   const setDemoMode = useCallback((value) => setState((prev) => ({ ...prev, demoModeEnabled: Boolean(value) })), []);
+
+  useEffect(() => {
+    if (!activeGuide) return;
+    const stillMatchesRoute = getGuideForPath(location.pathname)?.id === activeGuide.id;
+    if (!stillMatchesRoute) {
+      setActiveGuide(null);
+      setStepIndex(0);
+    }
+  }, [activeGuide, location.pathname]);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id || location.pathname !== '/dashboard' || activeGuide || !state.showTips) return;

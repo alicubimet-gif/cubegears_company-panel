@@ -17,6 +17,7 @@ import './styles/saas-account.css';
 import './styles/ui-refinements.css';
 import './styles/workflow-enhancements.css';
 import './styles/billing-system.css';
+import './styles/job-card-simple.css';
 
 export function App() {
   return (

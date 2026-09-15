@@ -4,6 +4,7 @@ import { USE_MOCK_API } from '../api/apiConfig';
 const DOCS_KEY = 'cubixgear:billing-documents';
 const INVENTORY_KEY = 'cubixgear:inventory';
 const STOCK_LEDGER_KEY = 'cubixgear:stock-ledger';
+const JOB_PREFILL_KEY = 'cubixgear:invoice-job-prefill';
 
 const seedDocuments = [
   {
@@ -37,17 +38,33 @@ const write = (key, value) => {
 const id = (prefix) => `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 const today = () => new Date().toISOString().slice(0, 10);
 
-export const blankBillingDocument = (kind = 'invoice') => ({
-  kind,
-  invoiceType: 'regular',
-  status: 'Draft',
-  date: today(),
-  customer: { name: '', phone: '', address: '', gstin: '', state: '', stateCode: '', placeOfSupply: '' },
-  vehicle: { registration: '', makeModel: '', odometer: '', vin: '' },
-  jobCardNo: '', staff: '', notes: '', items: [], discount: 0,
-  taxMode: 'none', cgstRate: 9, sgstRate: 9, igstRate: 18,
-  paid: 0, paymentMode: 'Cash', paymentTerms: 'C.O.D'
-});
+const getJobInvoicePrefill = () => {
+  try {
+    return JSON.parse(localStorage.getItem(JOB_PREFILL_KEY) || 'null');
+  } catch {
+    return null;
+  }
+};
+
+export const blankBillingDocument = (kind = 'invoice') => {
+  const prefill = kind === 'invoice' ? getJobInvoicePrefill() : null;
+  return {
+    kind,
+    invoiceType: 'regular',
+    status: 'Draft',
+    date: today(),
+    customer: { name: '', phone: '', address: '', gstin: '', state: '', stateCode: '', placeOfSupply: '', ...(prefill?.customer || {}) },
+    vehicle: { registration: '', makeModel: '', odometer: '', vin: '', ...(prefill?.vehicle || {}) },
+    jobCardNo: prefill?.jobNumber || prefill?.jobId || '',
+    sourceJobId: prefill?.jobId || '',
+    staff: '',
+    notes: prefill?.jobId ? `Created from Job Card ${prefill.jobNumber || prefill.jobId}` : '',
+    items: Array.isArray(prefill?.items) ? clone(prefill.items) : [],
+    discount: 0,
+    taxMode: 'none', cgstRate: 9, sgstRate: 9, igstRate: 18,
+    paid: '', paymentMode: 'Cash', paymentTerms: 'C.O.D'
+  };
+};
 
 export const calculateDocumentTotals = (doc) => {
   const itemSubtotal = (doc.items || []).reduce((sum, item) => {
@@ -111,6 +128,7 @@ export const billingService = {
     }
     const document = { ...blankBillingDocument(payload.kind), ...payload, id: id(payload.kind === 'estimate' ? 'EST' : 'INV'), number: nextNumber(payload.kind || 'invoice', docs), status: 'Draft', createdAt: new Date().toISOString() };
     write(DOCS_KEY, [document, ...docs]);
+    try { localStorage.removeItem(JOB_PREFILL_KEY); } catch { /* noop */ }
     return clone(document);
   },
   async finalize(documentId) {

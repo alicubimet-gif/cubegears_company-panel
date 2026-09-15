@@ -137,8 +137,8 @@ export function GuidanceProvider({ children }) {
 
   useEffect(() => {
     if (!activeGuide) return;
-    const stillMatchesRoute = getGuideForPath(location.pathname)?.id === activeGuide.id;
-    if (!stillMatchesRoute) {
+    const current = getGuideForPath(location.pathname);
+    if (!current || current.id !== activeGuide.id) {
       setActiveGuide(null);
       setStepIndex(0);
     }

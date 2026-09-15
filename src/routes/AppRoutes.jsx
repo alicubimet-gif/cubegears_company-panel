@@ -44,20 +44,20 @@ function RootRedirect() {
 
 export const AppRoutes = () => (
   <Routes>
-    {/* Canonical app entry: root route redirects to /dashboard preserving search parameters */}
-    <Route path="/" element={<RootRedirect />} />
-
+    <Route path="/" element={<Navigate to="/dashboard" replace />} />
     <Route path="/login" element={<Login />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />
     <Route path="/reset-password" element={<ResetPassword />} />
 
     <Route element={<ProtectedRoute />}>
       <Route path="/dashboard" element={<Dashboard />} />
+
       <Route path="/my-attendance" element={<MyAttendance />} />
       <Route path="/my-attendance/calendar" element={<MyAttendance />} />
       <Route path="/my-attendance/history" element={<MyAttendance />} />
       <Route path="/my-attendance/leave" element={<MyAttendance />} />
       <Route path="/my-attendance/summary" element={<MyAttendance />} />
+
       <Route path="/attendance-manager" element={<Navigate to="/attendance-manager/approvals" replace />} />
       <Route path="/attendance-manager/approvals" element={<AttendanceManager />} />
       <Route path="/attendance-manager/team-review" element={<AttendanceManager />} />
@@ -66,6 +66,7 @@ export const AppRoutes = () => (
       <Route path="/attendance-manager/leave-types" element={<AttendanceManager />} />
       <Route path="/attendance-manager/holidays" element={<AttendanceManager />} />
       <Route path="/attendance-manager/rules" element={<AttendanceManager />} />
+
       <Route path="/staff-management" element={<Navigate to="/staff-management/staff" replace />} />
       <Route path="/staff-management/staff" element={<StaffManagement />} />
       <Route path="/staff-management/roles" element={<StaffManagement />} />
@@ -78,24 +79,45 @@ export const AppRoutes = () => (
       <Route path="/payroll/advances" element={<Payroll section="advances" />} />
       <Route path="/payroll/payslips" element={<Payroll section="payslips" />} />
       <Route path="/payroll/reports" element={<Payroll section="reports" />} />
+
       <Route path="/customers" element={<CustomerList />} />
-      <Route path="/customers/add" element={<AddCustomer />} />
-      <Route path="/customers/edit/:id" element={<EditCustomer />} />
+      <Route path="/customers/new" element={<AddCustomer />} />
+      <Route path="/customers/add" element={<Navigate to="/customers/new" replace />} />
       <Route path="/customers/:id" element={<CustomerDetails />} />
+      <Route path="/customers/:id/edit" element={<EditCustomer />} />
+      <Route path="/customers/edit/:id" element={<EditCustomer />} />
+
       <Route path="/vehicles" element={<VehicleList />} />
-      <Route path="/vehicles/add" element={<VehicleList />} />
+      <Route path="/vehicles/new" element={<VehicleList />} />
+      <Route path="/vehicles/add" element={<Navigate to="/vehicles/new" replace />} />
       <Route path="/vehicles/:id" element={<VehicleList />} />
+      <Route path="/vehicles/:id/edit" element={<VehicleList />} />
+      <Route path="/vehicles/:id/delete" element={<VehicleList />} />
+
       <Route path="/services" element={<ServiceList />} />
       <Route path="/services/new" element={<ServiceList />} />
+      <Route path="/services/:id" element={<ServiceList />} />
+      <Route path="/services/:id/edit" element={<ServiceList />} />
+      <Route path="/services/:id/delete" element={<ServiceList />} />
+
       <Route path="/jobs" element={<JobList />} />
-      <Route path="/jobs/new" element={<JobList openNewModal={true} />} />
-      <Route path="/jobs/add" element={<JobList openNewModal={true} />} />
+      <Route path="/jobs/new" element={<JobList />} />
+      <Route path="/jobs/add" element={<Navigate to="/jobs/new" replace />} />
       <Route path="/jobs/:id" element={<JobDetails />} />
-      <Route path="/jobs/:id/*" element={<JobDetails />} />
+      <Route path="/jobs/:id/edit" element={<JobDetails />} />
       <Route path="/jobs/:id/status" element={<JobStatus />} />
+      <Route path="/jobs/:id/*" element={<JobDetails />} />
+
       <Route path="/inventory" element={<InventoryList />} />
+      <Route path="/inventory/new" element={<InventoryList />} />
       <Route path="/inventory/:id" element={<InventoryList />} />
+      <Route path="/inventory/:id/edit" element={<InventoryList />} />
+      <Route path="/inventory/:id/delete" element={<InventoryList />} />
+
       <Route path="/stock" element={<StockManagement />} />
+      <Route path="/stock/new" element={<StockManagement />} />
+      <Route path="/stock/:id/edit" element={<StockManagement />} />
+      <Route path="/stock/:id/delete" element={<StockManagement />} />
       <Route path="/stock/items" element={<StockManagement />} />
       <Route path="/stock/items/:itemId" element={<StockManagement />} />
       <Route path="/stock/in" element={<StockManagement />} />
@@ -110,12 +132,39 @@ export const AppRoutes = () => (
       <Route path="/stock/purchases" element={<StockManagement />} />
       <Route path="/stock/count" element={<StockManagement />} />
       <Route path="/stock/reports" element={<StockManagement />} />
+      <Route path="/stock/:id" element={<StockManagement />} />
+
       <Route path="/invoices" element={<InvoiceList />} />
-      <Route path="/invoices/create" element={<InvoiceList />} />
+      <Route path="/invoices/new" element={<InvoiceList />} />
+      <Route path="/invoices/create" element={<Navigate to="/invoices/new" replace />} />
+      <Route path="/invoices/:id" element={<InvoiceList />} />
+      <Route path="/invoices/:id/edit" element={<InvoiceList />} />
+      <Route path="/invoices/:id/delete" element={<InvoiceList />} />
+
       <Route path="/payments" element={<PaymentList />} />
+      <Route path="/payments/new" element={<PaymentList />} />
+      <Route path="/payments/:id" element={<PaymentList />} />
+      <Route path="/payments/:id/edit" element={<PaymentList />} />
+      <Route path="/payments/:id/delete" element={<PaymentList />} />
+
       <Route path="/expenses" element={<ExpenseList />} />
+      <Route path="/expenses/new" element={<ExpenseList />} />
+      <Route path="/expenses/:id" element={<ExpenseList />} />
+      <Route path="/expenses/:id/edit" element={<ExpenseList />} />
+      <Route path="/expenses/:id/delete" element={<ExpenseList />} />
+
       <Route path="/reports" element={<Reports />} />
+      <Route path="/reports/new" element={<Reports />} />
+      <Route path="/reports/:id" element={<Reports />} />
+      <Route path="/reports/:id/edit" element={<Reports />} />
+      <Route path="/reports/:id/delete" element={<Reports />} />
+
       <Route path="/notifications" element={<Notifications />} />
+      <Route path="/notifications/new" element={<Notifications />} />
+      <Route path="/notifications/:id" element={<Notifications />} />
+      <Route path="/notifications/:id/edit" element={<Notifications />} />
+      <Route path="/notifications/:id/delete" element={<Notifications />} />
+
       <Route path="/settings" element={<Settings />} />
       <Route path="/account" element={<Navigate to="/account/billing" replace />} />
       <Route path="/account/billing" element={<SaaSAccount section="billing" />} />

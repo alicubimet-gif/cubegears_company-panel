@@ -1,2 +1,2 @@
-export { BillingWorkspace as InvoiceList } from './BillingWorkspace';
-export { BillingWorkspace as default } from './BillingWorkspace';
+export { InvoiceRoutePage as InvoiceList } from './InvoiceRoutePage';
+export { InvoiceRoutePage as default } from './InvoiceRoutePage';

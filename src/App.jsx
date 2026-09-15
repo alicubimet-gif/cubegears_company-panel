@@ -15,6 +15,7 @@ import './styles/crud-system.css';
 import './styles/settings-system.css';
 import './styles/saas-account.css';
 import './styles/ui-refinements.css';
+import './styles/workflow-enhancements.css';
 import './styles/billing-system.css';
 
 export function App() {

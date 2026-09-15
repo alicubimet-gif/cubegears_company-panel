@@ -4,6 +4,7 @@ import { AuthProvider } from './context/AuthContext';
 import { CompanyProvider } from './context/CompanyContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { PayrollPeriodProvider } from './context/PayrollPeriodContext';
+import { GuidanceProvider } from './guidance/GuidanceProvider';
 import './api/registerSaasEndpoints';
 import { AppRoutes } from './routes/AppRoutes';
 import './routes/saasRouteRegistration';
@@ -22,17 +23,20 @@ import './styles/simple-workflow.css';
 import './styles/simple-jobs.css';
 import './styles/dashboard-polish.css';
 import './styles/header-system.css';
+import './styles/guidance-system.css';
 
 export function App() {
   return (
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          <CompanyProvider>
-            <PayrollPeriodProvider>
-              <AppRoutes />
-            </PayrollPeriodProvider>
-          </CompanyProvider>
+          <GuidanceProvider>
+            <CompanyProvider>
+              <PayrollPeriodProvider>
+                <AppRoutes />
+              </PayrollPeriodProvider>
+            </CompanyProvider>
+          </GuidanceProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

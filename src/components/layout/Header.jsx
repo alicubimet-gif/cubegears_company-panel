@@ -36,8 +36,8 @@ export const Header = () => {
   );
 
   return (
-    <header className="header app-header">
-      <div className="desktop-table-view header-desktop-row">
+    <header className="app-header">
+      <div className="app-header-desktop">
         <button type="button" className="header-brand" onClick={() => navigate('/dashboard')} aria-label="Go to dashboard">
           <span className="header-brand-mark">CG</span>
           <span className="header-brand-name">CubeGears Workspace</span>
@@ -67,7 +67,7 @@ export const Header = () => {
         </div>
       </div>
 
-      <div className="mobile-card-view mobile-header-simple">
+      <div className="app-header-mobile">
         <div className="mobile-header-topline">
           <button type="button" className="header-brand mobile" onClick={() => navigate('/dashboard')} aria-label="Go to dashboard">
             <span className="header-brand-mark">CG</span>

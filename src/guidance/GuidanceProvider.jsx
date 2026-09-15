@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { getGuideForPath, guides, roleGuideCopy } from './guides';
+import { getGuideForPath, guides, roleGuideCopy } from './guides/documentedGuides';
 import {
   buildContextGuide,
   buildPageGuide,
@@ -64,14 +64,16 @@ export function GuidanceProvider({ children }) {
 
   const buildAndOpenCurrentPage = useCallback((opener = null) => {
     if (!routeGuide) return;
-    const built = buildPageGuide(routeGuide, location.pathname);
+    const root = document.querySelector('.main-content');
+    const built = buildPageGuide(routeGuide, location.pathname, root);
     setCurrentPageGuide(built);
     openGuide(built, 0, opener);
   }, [location.pathname, openGuide, routeGuide]);
 
   const restartTour = useCallback(() => {
     if (location.pathname === '/dashboard') {
-      const built = buildPageGuide(guides.dashboard, '/dashboard');
+      const root = document.querySelector('.main-content');
+      const built = buildPageGuide(guides.dashboard, '/dashboard', root);
       setCurrentPageGuide(built);
       openGuide(built, 0);
     } else {
@@ -88,7 +90,7 @@ export function GuidanceProvider({ children }) {
   const setShowTips = useCallback(() => {}, []);
   const setDemoMode = useCallback((value) => setState((prev) => ({ ...prev, demoModeEnabled: Boolean(value) })), []);
 
-  // Every route visit gets its complete guide again. Nothing is written to cookies/localStorage.
+  // Every route visit gets its complete guide again. No completion state is persisted.
   useEffect(() => {
     if (!isAuthenticated || !user?.id || !routeGuide) return;
     if (routeVisitRef.current === routeVisitKey) return;
@@ -109,7 +111,7 @@ export function GuidanceProvider({ children }) {
     return () => clearTimeout(timer);
   }, [isAuthenticated, location.pathname, openGuide, routeGuide, routeVisitKey, user?.id]);
 
-  // If a button opens a new form/modal on the same route, guide that newly opened UI as well.
+  // A newly revealed form/modal/drawer on the same route gets contextual guidance.
   useEffect(() => {
     if (!isAuthenticated || !user?.id) return;
     const root = document.querySelector('.main-content');
@@ -125,9 +127,9 @@ export function GuidanceProvider({ children }) {
           const signature = contextSignature(container);
           if (!signature || contextSeenRef.current.has(signature)) continue;
           contextSeenRef.current.add(signature);
-          const guide = buildContextGuide(container, location.pathname);
-          if (guide) {
-            openGuide(guide, 0);
+          const contextual = buildContextGuide(container, location.pathname);
+          if (contextual) {
+            openGuide(contextual, 0);
             break;
           }
         }
@@ -135,7 +137,13 @@ export function GuidanceProvider({ children }) {
     };
 
     const observer = new MutationObserver(inspect);
-    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'open', 'aria-hidden'] });
+    observer.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style', 'open', 'aria-hidden']
+    });
+
     return () => {
       clearTimeout(debounce);
       observer.disconnect();

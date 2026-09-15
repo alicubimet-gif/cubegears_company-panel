@@ -24,6 +24,7 @@ import './styles/simple-jobs.css';
 import './styles/dashboard-polish.css';
 import './styles/header-system.css';
 import './styles/guidance-system.css';
+import './styles/guidance-mobile.css';
 
 export function App() {
   return (

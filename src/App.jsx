@@ -21,6 +21,7 @@ import './styles/job-card-simple.css';
 import './styles/simple-workflow.css';
 import './styles/simple-jobs.css';
 import './styles/dashboard-polish.css';
+import './styles/header-system.css';
 
 export function App() {
   return (

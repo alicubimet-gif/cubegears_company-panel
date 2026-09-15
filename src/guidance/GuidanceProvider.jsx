@@ -1,108 +1,56 @@
-import React, { createContext, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { getGuideForPath, guides, roleGuideCopy } from './guides';
+import {
+  buildContextGuide,
+  buildPageGuide,
+  contextSignature,
+  getVisibleContextContainers
+} from './pageGuideBuilder';
 
 export const GuidanceContext = createContext(null);
 
-const storageKey = (userId) => `cubixgear:guidance:${userId || 'guest'}`;
 const defaultState = {
   showTips: true,
-  demoModeEnabled: false,
-  guides: {},
-  dismissedTips: []
+  demoModeEnabled: false
 };
-
-function readState(userId) {
-  try {
-    const raw = localStorage.getItem(storageKey(userId));
-    return raw ? { ...defaultState, ...JSON.parse(raw) } : { ...defaultState };
-  } catch {
-    return { ...defaultState };
-  }
-}
 
 export function GuidanceProvider({ children }) {
   const { user, isAuthenticated } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const [state, setState] = useState(() => readState(user?.id));
+  const [state, setState] = useState(defaultState);
   const [activeGuide, setActiveGuide] = useState(null);
   const [stepIndex, setStepIndex] = useState(0);
   const [launcherEl, setLauncherEl] = useState(null);
-
-  useEffect(() => {
-    setState(readState(user?.id));
-  }, [user?.id]);
-
-  useEffect(() => {
-    if (!user?.id) return;
-    localStorage.setItem(storageKey(user.id), JSON.stringify(state));
-  }, [state, user?.id]);
+  const [currentPageGuide, setCurrentPageGuide] = useState(null);
+  const contextSeenRef = useRef(new Set());
+  const routeVisitRef = useRef('');
 
   const routeGuide = useMemo(() => getGuideForPath(location.pathname), [location.pathname]);
-  const routeGuideState = routeGuide ? state.guides?.[routeGuide.id] : null;
+  const routeVisitKey = `${location.key}:${location.pathname}${location.search}`;
 
-  const openGuide = useCallback((guide = routeGuide, startAt = 0, opener = null) => {
-    if (!guide) return;
+  const openGuide = useCallback((guide, startAt = 0, opener = null) => {
+    if (!guide?.steps?.length) return;
     setLauncherEl(opener || document.activeElement);
     setActiveGuide(guide);
-    const safeIndex = Math.min(Math.max(Number(startAt || 0), 0), Math.max(guide.steps.length - 1, 0));
-    setStepIndex(safeIndex);
-    setState((prev) => ({
-      ...prev,
-      guides: {
-        ...prev.guides,
-        [guide.id]: {
-          guideVersion: guide.version,
-          status: 'active',
-          lastStep: safeIndex,
-          completedAt: null
-        }
-      }
-    }));
-  }, [routeGuide]);
+    setStepIndex(Math.min(Math.max(Number(startAt || 0), 0), guide.steps.length - 1));
+  }, []);
 
-  const closeGuide = useCallback((status = 'skipped') => {
-    if (activeGuide) {
-      setState((prev) => ({
-        ...prev,
-        guides: {
-          ...prev.guides,
-          [activeGuide.id]: {
-            guideVersion: activeGuide.version,
-            status,
-            lastStep: stepIndex,
-            completedAt: status === 'completed' ? new Date().toISOString() : null
-          }
-        }
-      }));
-    }
+  const closeGuide = useCallback(() => {
     setActiveGuide(null);
     setStepIndex(0);
     setTimeout(() => launcherEl?.focus?.(), 0);
-  }, [activeGuide, launcherEl, stepIndex]);
+  }, [launcherEl]);
 
   const next = useCallback(() => {
     if (!activeGuide) return;
     if (stepIndex >= activeGuide.steps.length - 1) {
-      closeGuide('completed');
+      closeGuide();
       return;
     }
-    const nextIndex = stepIndex + 1;
-    setStepIndex(nextIndex);
-    setState((prev) => ({
-      ...prev,
-      guides: {
-        ...prev.guides,
-        [activeGuide.id]: {
-          ...(prev.guides?.[activeGuide.id] || {}),
-          guideVersion: activeGuide.version,
-          status: 'active',
-          lastStep: nextIndex
-        }
-      }
-    }));
+    setStepIndex((value) => value + 1);
   }, [activeGuide, closeGuide, stepIndex]);
 
   const previous = useCallback(() => setStepIndex((value) => Math.max(0, value - 1)), []);
@@ -110,56 +58,96 @@ export function GuidanceProvider({ children }) {
   const goToStepAction = useCallback(() => {
     const action = activeGuide?.steps?.[stepIndex]?.action;
     if (!action) return;
-    closeGuide('completed');
+    closeGuide();
     navigate(action);
   }, [activeGuide, closeGuide, navigate, stepIndex]);
 
+  const buildAndOpenCurrentPage = useCallback((opener = null) => {
+    if (!routeGuide) return;
+    const built = buildPageGuide(routeGuide, location.pathname);
+    setCurrentPageGuide(built);
+    openGuide(built, 0, opener);
+  }, [location.pathname, openGuide, routeGuide]);
+
   const restartTour = useCallback(() => {
-    setState((prev) => ({ ...prev, guides: {} }));
-    openGuide(guides.dashboard, 0);
-  }, [openGuide]);
+    if (location.pathname === '/dashboard') {
+      const built = buildPageGuide(guides.dashboard, '/dashboard');
+      setCurrentPageGuide(built);
+      openGuide(built, 0);
+    } else {
+      navigate('/dashboard');
+    }
+  }, [location.pathname, navigate, openGuide]);
 
   const restartCurrentGuide = useCallback((opener = null) => {
-    if (!routeGuide) return;
-    openGuide(routeGuide, 0, opener);
-  }, [openGuide, routeGuide]);
+    buildAndOpenCurrentPage(opener);
+  }, [buildAndOpenCurrentPage]);
 
-  const resumeCurrentGuide = useCallback((opener = null) => {
-    if (!routeGuide) return;
-    const saved = state.guides?.[routeGuide.id];
-    const startAt = saved?.guideVersion === routeGuide.version ? Number(saved.lastStep || 0) : 0;
-    openGuide(routeGuide, startAt, opener);
-  }, [openGuide, routeGuide, state.guides]);
-
-  const resetDismissedTips = useCallback(() => setState((prev) => ({ ...prev, dismissedTips: [] })), []);
-  const setShowTips = useCallback((value) => setState((prev) => ({ ...prev, showTips: Boolean(value) })), []);
+  const resumeCurrentGuide = restartCurrentGuide;
+  const resetDismissedTips = useCallback(() => {}, []);
+  const setShowTips = useCallback(() => {}, []);
   const setDemoMode = useCallback((value) => setState((prev) => ({ ...prev, demoModeEnabled: Boolean(value) })), []);
 
+  // Every route visit gets its complete guide again. Nothing is written to cookies/localStorage.
   useEffect(() => {
-    if (!activeGuide) return;
-    const current = getGuideForPath(location.pathname);
-    if (!current || current.id !== activeGuide.id) {
-      setActiveGuide(null);
-      setStepIndex(0);
-    }
-  }, [activeGuide, location.pathname]);
+    if (!isAuthenticated || !user?.id || !routeGuide) return;
+    if (routeVisitRef.current === routeVisitKey) return;
 
+    routeVisitRef.current = routeVisitKey;
+    contextSeenRef.current = new Set();
+    setActiveGuide(null);
+    setStepIndex(0);
+
+    const timer = setTimeout(() => {
+      const root = document.querySelector('.main-content');
+      getVisibleContextContainers(root).forEach((el) => contextSeenRef.current.add(contextSignature(el)));
+      const built = buildPageGuide(routeGuide, location.pathname, root);
+      setCurrentPageGuide(built);
+      openGuide(built, 0);
+    }, 550);
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, location.pathname, openGuide, routeGuide, routeVisitKey, user?.id]);
+
+  // If a button opens a new form/modal on the same route, guide that newly opened UI as well.
   useEffect(() => {
-    if (!isAuthenticated || !user?.id || location.pathname !== '/dashboard' || activeGuide || !state.showTips) return;
-    const guideState = state.guides?.dashboard;
-    const shouldShow = !guideState || guideState.guideVersion !== guides.dashboard.version || guideState.status === 'not_started';
-    if (shouldShow) {
-      const timer = setTimeout(() => openGuide(guides.dashboard, 0), 500);
-      return () => clearTimeout(timer);
-    }
-  }, [activeGuide, isAuthenticated, location.pathname, openGuide, state.guides, state.showTips, user?.id]);
+    if (!isAuthenticated || !user?.id) return;
+    const root = document.querySelector('.main-content');
+    if (!root) return;
+
+    let debounce;
+    const inspect = () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        if (activeGuide) return;
+        const containers = getVisibleContextContainers(root);
+        for (const container of containers) {
+          const signature = contextSignature(container);
+          if (!signature || contextSeenRef.current.has(signature)) continue;
+          contextSeenRef.current.add(signature);
+          const guide = buildContextGuide(container, location.pathname);
+          if (guide) {
+            openGuide(guide, 0);
+            break;
+          }
+        }
+      }, 180);
+    };
+
+    const observer = new MutationObserver(inspect);
+    observer.observe(root, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'open', 'aria-hidden'] });
+    return () => {
+      clearTimeout(debounce);
+      observer.disconnect();
+    };
+  }, [activeGuide, isAuthenticated, location.pathname, openGuide, user?.id]);
 
   const value = {
     state,
     activeGuide,
     stepIndex,
-    routeGuide,
-    routeGuideState,
+    routeGuide: currentPageGuide || routeGuide,
+    routeGuideState: null,
     roleMessage: roleGuideCopy[user?.role] || roleGuideCopy.ADMIN,
     openGuide,
     closeGuide,

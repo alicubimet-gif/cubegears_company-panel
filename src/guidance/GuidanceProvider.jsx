@@ -41,6 +41,7 @@ export function GuidanceProvider({ children }) {
   }, [state, user?.id]);
 
   const routeGuide = useMemo(() => getGuideForPath(location.pathname), [location.pathname]);
+  const routeGuideState = routeGuide ? state.guides?.[routeGuide.id] : null;
 
   const openGuide = useCallback((guide = routeGuide, startAt = 0, opener = null) => {
     if (!guide) return;
@@ -118,25 +119,38 @@ export function GuidanceProvider({ children }) {
     openGuide(guides.dashboard, 0);
   }, [openGuide]);
 
+  const restartCurrentGuide = useCallback((opener = null) => {
+    if (!routeGuide) return;
+    openGuide(routeGuide, 0, opener);
+  }, [openGuide, routeGuide]);
+
+  const resumeCurrentGuide = useCallback((opener = null) => {
+    if (!routeGuide) return;
+    const saved = state.guides?.[routeGuide.id];
+    const startAt = saved?.guideVersion === routeGuide.version ? Number(saved.lastStep || 0) : 0;
+    openGuide(routeGuide, startAt, opener);
+  }, [openGuide, routeGuide, state.guides]);
+
   const resetDismissedTips = useCallback(() => setState((prev) => ({ ...prev, dismissedTips: [] })), []);
   const setShowTips = useCallback((value) => setState((prev) => ({ ...prev, showTips: Boolean(value) })), []);
   const setDemoMode = useCallback((value) => setState((prev) => ({ ...prev, demoModeEnabled: Boolean(value) })), []);
 
   useEffect(() => {
-    if (!isAuthenticated || !user?.id || location.pathname !== '/dashboard' || activeGuide) return;
+    if (!isAuthenticated || !user?.id || location.pathname !== '/dashboard' || activeGuide || !state.showTips) return;
     const guideState = state.guides?.dashboard;
     const shouldShow = !guideState || guideState.guideVersion !== guides.dashboard.version || guideState.status === 'not_started';
     if (shouldShow) {
       const timer = setTimeout(() => openGuide(guides.dashboard, 0), 500);
       return () => clearTimeout(timer);
     }
-  }, [activeGuide, isAuthenticated, location.pathname, openGuide, state.guides, user?.id]);
+  }, [activeGuide, isAuthenticated, location.pathname, openGuide, state.guides, state.showTips, user?.id]);
 
   const value = {
     state,
     activeGuide,
     stepIndex,
     routeGuide,
+    routeGuideState,
     roleMessage: roleGuideCopy[user?.role] || roleGuideCopy.ADMIN,
     openGuide,
     closeGuide,
@@ -144,6 +158,8 @@ export function GuidanceProvider({ children }) {
     previous,
     goToStepAction,
     restartTour,
+    restartCurrentGuide,
+    resumeCurrentGuide,
     resetDismissedTips,
     setShowTips,
     setDemoMode

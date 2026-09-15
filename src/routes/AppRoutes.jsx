@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 
 import { Login } from '../pages/auth/Login';
@@ -31,10 +31,21 @@ import { SaaSAccount } from '../pages/saas/SaaSAccount';
 import { StorageHistory } from '../pages/saas/StorageHistory';
 import { StorageDayDetails } from '../pages/saas/StorageDayDetails';
 
+function RootRedirect() {
+  const location = useLocation();
+
+  return (
+    <Navigate
+      to={`/dashboard${location.search}`}
+      replace
+    />
+  );
+}
+
 export const AppRoutes = () => (
   <Routes>
-    {/* Canonical app entry: never keep dashboard filters on the bare root URL. */}
-    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+    {/* Canonical app entry: root route redirects to /dashboard preserving search parameters */}
+    <Route path="/" element={<RootRedirect />} />
 
     <Route path="/login" element={<Login />} />
     <Route path="/forgot-password" element={<ForgotPassword />} />

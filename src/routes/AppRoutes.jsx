@@ -131,6 +131,8 @@ export const AppRoutes = () => (
       <Route path="/invoices/:id" element={<InvoiceList />} />
       <Route path="/invoices/:id/edit" element={<InvoiceList />} />
       <Route path="/invoices/:id/delete" element={<InvoiceList />} />
+      <Route path="/quotations" element={<Navigate to="/invoices?kind=estimate" replace />} />
+      <Route path="/quotations/new" element={<Navigate to="/invoices/new?kind=estimate" replace />} />
 
       <Route path="/payments" element={<PaymentList />} />
       <Route path="/payments/new" element={<PaymentList />} />

@@ -32,7 +32,7 @@ export function GuidancePageAction() {
       >
         <HelpCircle size={16}/>
         <span>{resumable ? 'Resume Guide' : 'Guide'}</span>
-        {completed && <span className="guidance-page-done" aria-label="Completed">✓</span>}
+        {completed && <span className="guidance-page-done" aria-label="Guide completed">✓</span>}
       </button>
 
       <button type="button" className="guidance-page-more" onClick={() => setOpen((value) => !value)} aria-label="Guidance options">
@@ -43,7 +43,7 @@ export function GuidancePageAction() {
         <div className="guidance-page-menu">
           <div className="guidance-page-menu-head">
             <div><strong>Help & Guidance</strong><small>{routeGuide.title}</small></div>
-            <button type="button" onClick={() => setOpen(false)}><X size={15}/></button>
+            <button type="button" onClick={() => setOpen(false)} aria-label="Close guidance options"><X size={15}/></button>
           </div>
 
           <label className="guidance-toggle-row">

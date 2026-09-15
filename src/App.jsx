@@ -18,6 +18,7 @@ import './styles/ui-refinements.css';
 import './styles/workflow-enhancements.css';
 import './styles/billing-system.css';
 import './styles/job-card-simple.css';
+import './styles/simple-workflow.css';
 
 export function App() {
   return (

@@ -4,33 +4,19 @@ import { USE_MOCK_API } from '../api/apiConfig';
 const DOCS_KEY = 'cubixgear:billing-documents';
 const INVENTORY_KEY = 'cubixgear:inventory';
 const STOCK_LEDGER_KEY = 'cubixgear:stock-ledger';
+const JOB_PREFILL_KEY = 'cubixgear:invoice-job-prefill';
 
 const seedDocuments = [
   {
-    id: 'INV-2026-1001',
-    number: 'INV-2026-1001',
-    kind: 'invoice',
-    invoiceType: 'regular',
-    status: 'Finalized',
-    date: '2026-09-12',
+    id: 'INV-2026-1001', number: 'INV-2026-1001', kind: 'invoice', invoiceType: 'regular', status: 'Finalized', date: '2026-09-12',
     customer: { name: 'Rahul P', phone: '+91 98765 43210', address: '', gstin: '' },
     vehicle: { registration: 'KL-08-BQ-4581', makeModel: 'Toyota Innova Crysta', odometer: '52,400 km', vin: '' },
-    jobCardNo: 'JOB-2048',
-    staff: 'Rahul',
-    notes: 'Periodic maintenance completed.',
+    jobCardNo: 'JOB-2048', staff: 'Rahul', notes: 'Periodic maintenance completed.',
     items: [
       { id: 'L1', type: 'Labour', description: 'Periodic service labour', code: '', qty: 1, purchasePrice: 0, rate: 1200, discount: 0, inventoryId: '' },
       { id: 'P1', type: 'Stock Part', description: 'Oil Filter', code: 'FLT-OIL-02', qty: 1, purchasePrice: 280, rate: 450, discount: 0, inventoryId: 'ITM-1002' }
     ],
-    discount: 0,
-    taxMode: 'none',
-    cgstRate: 0,
-    sgstRate: 0,
-    igstRate: 0,
-    paid: 1650,
-    paymentMode: 'UPI',
-    paymentTerms: 'C.O.D',
-    finalizedAt: '2026-09-12T10:00:00.000Z'
+    discount: 0, taxMode: 'none', cgstRate: 0, sgstRate: 0, igstRate: 0, paid: 1650, paymentMode: 'UPI', paymentTerms: 'C.O.D', finalizedAt: '2026-09-12T10:00:00.000Z'
   }
 ];
 
@@ -52,26 +38,33 @@ const write = (key, value) => {
 const id = (prefix) => `${prefix}-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 const today = () => new Date().toISOString().slice(0, 10);
 
-export const blankBillingDocument = (kind = 'invoice') => ({
-  kind,
-  invoiceType: 'regular',
-  status: 'Draft',
-  date: today(),
-  customer: { name: '', phone: '', address: '', gstin: '', state: '', stateCode: '', placeOfSupply: '' },
-  vehicle: { registration: '', makeModel: '', odometer: '', vin: '' },
-  jobCardNo: '',
-  staff: '',
-  notes: '',
-  items: [],
-  discount: 0,
-  taxMode: 'none',
-  cgstRate: 9,
-  sgstRate: 9,
-  igstRate: 18,
-  paid: 0,
-  paymentMode: 'Cash',
-  paymentTerms: 'C.O.D'
-});
+const getJobInvoicePrefill = () => {
+  try {
+    return JSON.parse(localStorage.getItem(JOB_PREFILL_KEY) || 'null');
+  } catch {
+    return null;
+  }
+};
+
+export const blankBillingDocument = (kind = 'invoice') => {
+  const prefill = kind === 'invoice' ? getJobInvoicePrefill() : null;
+  return {
+    kind,
+    invoiceType: 'regular',
+    status: 'Draft',
+    date: today(),
+    customer: { name: '', phone: '', address: '', gstin: '', state: '', stateCode: '', placeOfSupply: '', ...(prefill?.customer || {}) },
+    vehicle: { registration: '', makeModel: '', odometer: '', vin: '', ...(prefill?.vehicle || {}) },
+    jobCardNo: prefill?.jobNumber || prefill?.jobId || '',
+    sourceJobId: prefill?.jobId || '',
+    staff: '',
+    notes: prefill?.jobId ? `Created from Job Card ${prefill.jobNumber || prefill.jobId}` : '',
+    items: Array.isArray(prefill?.items) ? clone(prefill.items) : [],
+    discount: 0,
+    taxMode: 'none', cgstRate: 9, sgstRate: 9, igstRate: 18,
+    paid: '', paymentMode: 'Cash', paymentTerms: 'C.O.D'
+  };
+};
 
 export const calculateDocumentTotals = (doc) => {
   const itemSubtotal = (doc.items || []).reduce((sum, item) => {
@@ -101,7 +94,6 @@ const applyStockMovement = (doc, direction) => {
   const inventory = read(INVENTORY_KEY, []);
   const ledger = read(STOCK_LEDGER_KEY, []);
   const movements = [];
-
   for (const item of doc.items || []) {
     if (item.type !== 'Stock Part' || !item.inventoryId) continue;
     const qty = Number(item.qty || 0);
@@ -111,18 +103,8 @@ const applyStockMovement = (doc, direction) => {
     const next = direction === 'issue' ? current - qty : current + qty;
     if (direction === 'issue' && next < 0) throw new Error(`${inventory[index].name} has only ${current} in stock.`);
     inventory[index] = { ...inventory[index], onHand: next };
-    movements.push({
-      id: id('LED'),
-      date: new Date().toISOString(),
-      documentId: doc.id,
-      documentNo: doc.number,
-      inventoryId: item.inventoryId,
-      itemName: inventory[index].name,
-      qty: direction === 'issue' ? -qty : qty,
-      action: direction === 'issue' ? 'Invoice Finalized' : 'Invoice Cancelled'
-    });
+    movements.push({ id: id('LED'), date: new Date().toISOString(), documentId: doc.id, documentNo: doc.number, inventoryId: item.inventoryId, itemName: inventory[index].name, qty: direction === 'issue' ? -qty : qty, action: direction === 'issue' ? 'Invoice Finalized' : 'Invoice Cancelled' });
   }
-
   write(INVENTORY_KEY, inventory);
   write(STOCK_LEDGER_KEY, [...movements, ...ledger]);
 };
@@ -132,32 +114,23 @@ export const billingService = {
     if (!USE_MOCK_API) return apiClient.get('/billing/documents');
     return read(DOCS_KEY, seedDocuments);
   },
-
   async get(documentId) {
     if (!USE_MOCK_API) return apiClient.get(`/billing/documents/${documentId}`);
     return read(DOCS_KEY, seedDocuments).find((row) => row.id === documentId) || null;
   },
-
   async saveDraft(payload) {
-    if (!USE_MOCK_API) return apiClient.post('/billing/documents', payload);
+    if (!USE_MOCK_API) return payload.id ? apiClient.put(`/billing/documents/${payload.id}`, payload) : apiClient.post('/billing/documents', payload);
     const docs = read(DOCS_KEY, seedDocuments);
     if (payload.id) {
       const next = docs.map((row) => row.id === payload.id ? { ...row, ...payload, updatedAt: new Date().toISOString() } : row);
       write(DOCS_KEY, next);
       return clone(next.find((row) => row.id === payload.id));
     }
-    const document = {
-      ...blankBillingDocument(payload.kind),
-      ...payload,
-      id: id(payload.kind === 'estimate' ? 'EST' : 'INV'),
-      number: nextNumber(payload.kind || 'invoice', docs),
-      status: 'Draft',
-      createdAt: new Date().toISOString()
-    };
+    const document = { ...blankBillingDocument(payload.kind), ...payload, id: id(payload.kind === 'estimate' ? 'EST' : 'INV'), number: nextNumber(payload.kind || 'invoice', docs), status: 'Draft', createdAt: new Date().toISOString() };
     write(DOCS_KEY, [document, ...docs]);
+    try { localStorage.removeItem(JOB_PREFILL_KEY); } catch { /* noop */ }
     return clone(document);
   },
-
   async finalize(documentId) {
     if (!USE_MOCK_API) return apiClient.post(`/billing/documents/${documentId}/finalize`);
     const docs = read(DOCS_KEY, seedDocuments);
@@ -169,7 +142,6 @@ export const billingService = {
     write(DOCS_KEY, docs.map((row) => row.id === documentId ? nextDoc : row));
     return clone(nextDoc);
   },
-
   async cancel(documentId) {
     if (!USE_MOCK_API) return apiClient.post(`/billing/documents/${documentId}/cancel`);
     const docs = read(DOCS_KEY, seedDocuments);
@@ -180,14 +152,21 @@ export const billingService = {
     write(DOCS_KEY, docs.map((row) => row.id === documentId ? nextDoc : row));
     return clone(nextDoc);
   },
-
+  async remove(documentId) {
+    if (!USE_MOCK_API) return apiClient.delete(`/billing/documents/${documentId}`);
+    const docs = read(DOCS_KEY, seedDocuments);
+    const doc = docs.find((row) => row.id === documentId);
+    if (!doc) throw new Error('Document not found.');
+    if (!['Draft', 'Cancelled'].includes(doc.status)) throw new Error('Finalized/issued documents cannot be deleted. Cancel the document first.');
+    write(DOCS_KEY, docs.filter((row) => row.id !== documentId));
+    return true;
+  },
   async convertEstimateToInvoice(estimateId) {
     const estimate = await this.get(estimateId);
     if (!estimate) throw new Error('Estimate not found.');
     const { id: _id, number: _number, status: _status, finalizedAt: _finalizedAt, ...copy } = estimate;
     return this.saveDraft({ ...copy, kind: 'invoice', invoiceType: estimate.invoiceType || 'regular', status: 'Draft' });
   },
-
   async inventory() {
     if (!USE_MOCK_API) return apiClient.get('/inventory');
     return read(INVENTORY_KEY, []);

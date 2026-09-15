@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ProtectedRoute } from './ProtectedRoute';
 
 import { Login } from '../pages/auth/Login';
@@ -17,6 +17,7 @@ import { CustomerDetails } from '../pages/customers/CustomerDetails';
 import { VehicleList } from '../pages/vehicles/VehicleList';
 import { ServiceList } from '../pages/services/ServiceList';
 import { JobList } from '../pages/jobs/JobList';
+import { JobCreatePage } from '../pages/jobs/JobCreatePage';
 import { JobDetails } from '../pages/jobs/JobDetails';
 import { JobStatus } from '../pages/jobs/JobStatus';
 import { InventoryList } from '../pages/inventory/InventoryList';
@@ -27,20 +28,10 @@ import { ExpenseList } from '../pages/expenses/ExpenseList';
 import { Reports } from '../pages/reports/Reports';
 import { Notifications } from '../pages/notifications/Notifications';
 import { Settings } from '../pages/settings/Settings';
+import { Profile } from '../pages/profile/Profile';
 import { SaaSAccount } from '../pages/saas/SaaSAccount';
 import { StorageHistory } from '../pages/saas/StorageHistory';
 import { StorageDayDetails } from '../pages/saas/StorageDayDetails';
-
-function RootRedirect() {
-  const location = useLocation();
-
-  return (
-    <Navigate
-      to={`/dashboard${location.search}`}
-      replace
-    />
-  );
-}
 
 export const AppRoutes = () => (
   <Routes>
@@ -101,7 +92,7 @@ export const AppRoutes = () => (
       <Route path="/services/:id/delete" element={<ServiceList />} />
 
       <Route path="/jobs" element={<JobList />} />
-      <Route path="/jobs/new" element={<JobList />} />
+      <Route path="/jobs/new" element={<JobCreatePage />} />
       <Route path="/jobs/add" element={<Navigate to="/jobs/new" replace />} />
       <Route path="/jobs/:id" element={<JobDetails />} />
       <Route path="/jobs/:id/edit" element={<JobDetails />} />
@@ -165,6 +156,7 @@ export const AppRoutes = () => (
       <Route path="/notifications/:id/edit" element={<Notifications />} />
       <Route path="/notifications/:id/delete" element={<Notifications />} />
 
+      <Route path="/profile" element={<Profile />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="/account" element={<Navigate to="/account/billing" replace />} />
       <Route path="/account/billing" element={<SaaSAccount section="billing" />} />
